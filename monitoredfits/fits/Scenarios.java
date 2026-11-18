@@ -4,7 +4,7 @@ import rv.Verification;
 
 public class Scenarios {
 
-	private static Integer SCENARIO_COUNT = 32;
+	private static Integer SCENARIO_COUNT = 38;
 
 	static TransactionSystem transactionsystem = new TransactionSystem();
 
@@ -15,13 +15,13 @@ public class Scenarios {
 		Integer uid, uid_receiver;
 		Integer sid, sid1, sid2, sid_receiver;
 
-		if (n > 0 && n <= SCENARIO_COUNT) {
-			Integer prop = (n + 1) / 2;
+	if (n > 0 && n <= SCENARIO_COUNT) {
+        String prop = (n <= 32) ? String.valueOf((n + 1) / 2) : "1A";
 
-			System.out.println("\nRunning scenario " + n + ".");
-			System.out
-					.println("This scenario should " + ((n % 2 == 1) ? "" : "not ") + "violate property " + prop + ".");
-		}
+        System.out.println("\nRunning scenario " + n + ".");
+        System.out
+                        .println("This scenario should " + ((n % 2 == 1) ? "" : "not ") + "violate property " + prop + ".");
+}
 		switch (n) {
 		// PROPERTY 1: Only users based in Argentina can be Gold users.
 		case 1:
@@ -561,7 +561,107 @@ public class Scenarios {
 			System.out.println("Time is fast-forwarded by 00h02m00s");
 			frontend.USER_logout(uid, sid1);
 			break;
-
+		// PROPERTY 1A: Post-greylist probation period (3 deposits required before withdrawal)
+             case 33:
+                     // P1A violation (0 probation deposits before withdrawal)
+                     frontend.ADMIN_initialise();
+                     uid = frontend.ADMIN_createUser("Alice", "Malta");
+                     frontend.ADMIN_enableUser(uid);
+                     sid = frontend.USER_login(uid);
+                     account_number = frontend.USER_requestAccount(uid, sid);
+                     frontend.ADMIN_approveOpenAccount(uid, account_number);
+                     frontend.USER_depositFromExternal(uid, sid, account_number, 200.00);
+                     frontend.ADMIN_greylistUser(uid);
+                     frontend.ADMIN_whitelistUser(uid);
+                     frontend.USER_payToExternal(uid, sid, account_number, 50.00);
+                     break;
+             case 34:
+                     // P1A non-violation (3 deposits complete probation before withdrawal)
+                     frontend.ADMIN_initialise();
+                     uid = frontend.ADMIN_createUser("Alice", "Malta");
+                     frontend.ADMIN_enableUser(uid);
+                     sid = frontend.USER_login(uid);
+                     account_number = frontend.USER_requestAccount(uid, sid);
+                     frontend.ADMIN_approveOpenAccount(uid, account_number);
+                     frontend.ADMIN_greylistUser(uid);
+                     frontend.ADMIN_whitelistUser(uid);
+                     frontend.USER_depositFromExternal(uid, sid, account_number, 100.00);
+                     frontend.USER_depositFromExternal(uid, sid, account_number, 100.00);
+                     frontend.USER_depositFromExternal(uid, sid, account_number, 100.00);
+                     frontend.USER_payToExternal(uid, sid, account_number, 50.00);
+                     break;
+             case 35:
+                     // P1A violation (boundary off-by-one: only 2 deposits before withdrawal)
+                     frontend.ADMIN_initialise();
+                     uid = frontend.ADMIN_createUser("Alice", "Malta");
+                     frontend.ADMIN_enableUser(uid);
+                     sid = frontend.USER_login(uid);
+                     account_number = frontend.USER_requestAccount(uid, sid);
+                     frontend.ADMIN_approveOpenAccount(uid, account_number);
+                     frontend.ADMIN_greylistUser(uid);
+                     frontend.ADMIN_whitelistUser(uid);
+                     frontend.USER_depositFromExternal(uid, sid, account_number, 100.00);
+                     frontend.USER_depositFromExternal(uid, sid, account_number, 100.00);
+                     frontend.USER_payToExternal(uid, sid, account_number, 50.00);
+                     break;
+             case 36:
+                     // P1A non-violation (re-greylisted mid-probation, then 3 fresh deposits)
+                     frontend.ADMIN_initialise();
+                     uid = frontend.ADMIN_createUser("Alice", "Malta");
+                     frontend.ADMIN_enableUser(uid);
+                     sid = frontend.USER_login(uid);
+                     account_number = frontend.USER_requestAccount(uid, sid);
+                     frontend.ADMIN_approveOpenAccount(uid, account_number);
+                     frontend.ADMIN_greylistUser(uid);
+                     frontend.ADMIN_whitelistUser(uid);
+                     frontend.USER_depositFromExternal(uid, sid, account_number, 100.00);
+                     frontend.USER_depositFromExternal(uid, sid, account_number, 100.00);
+                     frontend.ADMIN_greylistUser(uid);
+                     frontend.ADMIN_whitelistUser(uid);
+                     frontend.USER_depositFromExternal(uid, sid, account_number, 100.00);
+                     frontend.USER_depositFromExternal(uid, sid, account_number, 100.00);
+                     frontend.USER_depositFromExternal(uid, sid, account_number, 100.00);
+                     frontend.USER_payToExternal(uid, sid, account_number, 50.00);
+                     break;
+             case 37:
+                     // P1A violation (counter reset check after re-greylisting: 2 + 1 != 3)
+                     frontend.ADMIN_initialise();
+                     uid = frontend.ADMIN_createUser("Alice", "Malta");
+                     frontend.ADMIN_enableUser(uid);
+                     sid = frontend.USER_login(uid);
+                     account_number = frontend.USER_requestAccount(uid, sid);
+                     frontend.ADMIN_approveOpenAccount(uid, account_number);
+                     frontend.ADMIN_greylistUser(uid);
+                     frontend.ADMIN_whitelistUser(uid);
+                     frontend.USER_depositFromExternal(uid, sid, account_number, 100.00);
+                     frontend.USER_depositFromExternal(uid, sid, account_number, 100.00);
+                     frontend.ADMIN_greylistUser(uid);
+                     frontend.ADMIN_whitelistUser(uid);
+                     frontend.USER_depositFromExternal(uid, sid, account_number, 100.00);
+                     frontend.USER_payToExternal(uid, sid, account_number, 50.00);
+                     break;
+             case 38:
+                     // P1A non-violation (per-user isolation: Bob in probation does not block Alice)
+                     frontend.ADMIN_initialise();
+                     uid = frontend.ADMIN_createUser("Alice", "Malta");
+                     uid_receiver = frontend.ADMIN_createUser("Bob", "Malta");
+                     frontend.ADMIN_enableUser(uid);
+                     frontend.ADMIN_enableUser(uid_receiver);
+                     sid1 = frontend.USER_login(uid);
+                     sid2 = frontend.USER_login(uid_receiver);
+                     account_number1 = frontend.USER_requestAccount(uid, sid1);
+                     account_number2 = frontend.USER_requestAccount(uid_receiver, sid2);
+                     frontend.ADMIN_approveOpenAccount(uid, account_number1);
+                     frontend.ADMIN_approveOpenAccount(uid_receiver, account_number2);
+                     frontend.ADMIN_greylistUser(uid);
+                     frontend.ADMIN_whitelistUser(uid);
+                     frontend.ADMIN_greylistUser(uid_receiver);
+                     frontend.ADMIN_whitelistUser(uid_receiver);
+                     frontend.USER_depositFromExternal(uid, sid1, account_number1, 100.00);
+                     frontend.USER_depositFromExternal(uid, sid1, account_number1, 100.00);
+                     frontend.USER_depositFromExternal(uid, sid1, account_number1, 100.00);
+                     frontend.USER_payToExternal(uid, sid1, account_number1, 50.00);
+                     break;
 		default:
 			System.out.println("Requested scenario " + n.toString() + " which is not defined.");
 		}
@@ -591,4 +691,6 @@ public class Scenarios {
 			runScenario(n);
 		}
 	}
+
+	
 }
